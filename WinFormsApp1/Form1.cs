@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text;
 using WallpaperWindow;
 
 
 namespace WinFormsApp1 {
     public partial class Form1 : Form {
+        static IntPtr progman = IntPtr.Zero;
         static IntPtr workerW = IntPtr.Zero;
         static Process wallpaperProcess = new();
         static IntPtr wallpaperHandle = IntPtr.Zero;
@@ -63,10 +67,35 @@ namespace WinFormsApp1 {
                                         |  (IntPtr)W32.WindowStylesEx.WS_EX_TOOLWINDOW;
                 W32.SetWindowLongPtr(wallpaperHandle, W32.GWL_EXSTYLE, newExStyles);
 
-                // Change Properties of the Window
-                /// Remove all Properties
-                Debugger.Console.Log(W32.GetWindowLongPtr(wallpaperHandle, W32.GWL_EXSTYLE).ToString("X"));
+                // Change Properties of the Class 
+                W32.GetClassInfoEx(W32.GetModuleHandle(null!), W32.GetWindowClass(wallpaperHandle), out W32.WNDCLASSEX wndClass); // Get the old class
+                wndClass.style = wndClass.style 
+                                 | (uint)W32.ClassStyles.CS_HREDRAW
+                                 | (uint)W32.ClassStyles.CS_VREDRAW;
+                W32.SetClassLongPtr(wallpaperHandle, W32.GCL_STYLE, (IntPtr)wndClass.style);
 
+                IntPtr mpv = IntPtr.Zero;
+                List<IntPtr> allChildrenOfWorkerW = new WindowHandleInfo(workerW).GetAllChildHandles();
+                foreach (IntPtr child in allChildrenOfWorkerW) {
+                    string str = (child.ToString("X"));
+
+                    StringBuilder ClassName = new StringBuilder(256);
+                    var nRet = W32.GetClassName(child, ClassName, ClassName.Capacity);
+                    if (nRet != 0) {
+                        str += ": " + (ClassName.ToString());
+                        if (String.Compare(ClassName.ToString(), "mpv", true, CultureInfo.InvariantCulture) == 0) {
+                            mpv = child;
+                            break;
+                        }
+                    }
+
+                    Debugger.Console.Log(str);
+                }
+
+                Debugger.Console.Log($"mpv Handle: {mpv.ToString("X")}");   
+
+                W32.GetClassInfoEx(mpv, W32.GetWindowClass(mpv), out W32.WNDCLASSEX mpvClass);
+                Debugger.Console.Log($"mpvClass style: {mpvClass.cbSize.ToString("X")}");
 
                 // Change Position And Update Window
                 W32.SetWindowPos(wallpaperHandle, IntPtr.Zero, 1920, 0, 1080, 1920,
@@ -123,7 +152,7 @@ namespace WinFormsApp1 {
         /// <returns></returns>
         private static IntPtr GetWorkerW() {
             // Get Progman
-            IntPtr progman = W32.FindWindow("Progman", null!);
+            progman = W32.FindWindow("Progman", null!);
             if (progman != IntPtr.Zero) {
                 Debugger.Console.Log($"progman Handle: {progman.ToString("X")}");
             }
@@ -160,4 +189,50 @@ namespace WinFormsApp1 {
             return workerw;
         }
     }
+
+
+    public class WindowHandleInfo {
+        private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport("user32")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr lParam);
+
+        private IntPtr _MainHandle;
+
+        public WindowHandleInfo(IntPtr handle) {
+            this._MainHandle = handle;
+        }
+
+        public List<IntPtr> GetAllChildHandles() {
+            List<IntPtr> childHandles = new List<IntPtr>();
+
+            GCHandle gcChildhandlesList = GCHandle.Alloc(childHandles);
+            IntPtr pointerChildHandlesList = GCHandle.ToIntPtr(gcChildhandlesList);
+
+            try {
+                EnumWindowProc childProc = new EnumWindowProc(EnumWindow);
+                EnumChildWindows(this._MainHandle, childProc, pointerChildHandlesList);
+            }
+            finally {
+                gcChildhandlesList.Free();
+            }
+
+            return childHandles;
+        }
+
+        private bool EnumWindow(IntPtr hWnd, IntPtr lParam) {
+            GCHandle gcChildhandlesList = GCHandle.FromIntPtr(lParam);
+
+            if (gcChildhandlesList == null || gcChildhandlesList.Target == null) {
+                return false;
+            }
+
+            List<IntPtr> childHandles = gcChildhandlesList.Target as List<IntPtr>;
+            childHandles.Add(hWnd);
+
+            return true;
+        }
+    }
+
 }

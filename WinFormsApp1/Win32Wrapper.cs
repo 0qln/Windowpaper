@@ -28,8 +28,8 @@ namespace WallpaperWindow {
         public const int WM_GETICON = 0x7F;
         public const UInt32 WM_CLOSE = 0x0010;
 
-        const int GCL_STYLE = -26;
-        const int CS_DROPSHADOW = 0x00020000;
+        public const int GCL_STYLE = -26;
+        public const int CS_DROPSHADOW = 0x00020000;
 
 
         public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
@@ -629,6 +629,25 @@ namespace WallpaperWindow {
             public string lpszMenuName;
             public string lpszClassName;
             public IntPtr hIconSm;
+        }
+
+        [Flags]
+        public enum ClassStyles : uint {
+            /// <summary>Aligns the window's client area on a byte boundary (in the x direction). This style affects the width of the window and its horizontal placement on the display.</summary>
+            ByteAlignClient = 0x1000,
+            CS_VREDRAW = 0x0001,
+            CS_HREDRAW = 0x0002,
+            CS_DBLCLKS = 0x0008,
+            CS_OWNDC = 0x0020,
+            CS_CLASSDC = 0x0040,
+            CS_PARENTDC = 0x0080,
+            CS_NOCLOSE = 0x0200,
+            CS_SAVEBITS = 0x0800,
+            CS_BYTEALIGNCLIENT = 0x1000,
+            CS_BYTEALIGNWINDOW = 0x2000,
+            CS_GLOBALCLASS = 0x4000,
+            CS_IME = 0x00010000,
+            CS_DROPSHADOW = 0x00020000
         }
 
         [DllImport("user32.dll", SetLastError = true)]
