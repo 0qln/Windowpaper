@@ -1,0 +1,19 @@
+﻿<Window x:Class="ImageWindow.MainWallpaperWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ImageWindow"
+        mc:Ignorable="d"
+        Title="MainWallpaperWindow" Height="1080" Width="1920"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStyle="None"
+        Left="0"
+        Top="0">
+    <Grid>
+        <Image x:Name="image" Source="C:\Users\User\OneDrive\Bilder\Wallpapers\vertical2\ftpbwb9ecjza1.webp" Stretch="UniformToFill">
+            
+        </Image>
+    </Grid>
+</Window>
